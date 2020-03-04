@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Context>
+    <Resource name="jms/ConnectionFactory"
+              type="javax.jms.ConnectionFactory"
+              factory="com.rabbitmq.jms.admin.RMQObjectFactory"
+              username="user"
+              password="password"
+              virtualHost="/"
+              host="localhost"
+              port="5672" />
+
+    <Resource  name="jms/ExampleQueue"
+               type="javax.jms.Queue"
+               factory="com.rabbitmq.jms.admin.RMQObjectFactory"
+               destinationName="myExampleQueue" />
+    <!-- destinationName is the RabbitMQ name that will be used -->
+</Context>
