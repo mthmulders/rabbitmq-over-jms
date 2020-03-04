@@ -13,5 +13,4 @@
                type="javax.jms.Queue"
                factory="com.rabbitmq.jms.admin.RMQObjectFactory"
                destinationName="myExampleQueue" />
-    <!-- destinationName is the RabbitMQ name that will be used -->
 </Context>

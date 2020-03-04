@@ -21,6 +21,9 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.UUID;
 
+/**
+ * Provides a way to publish a message to RabbitMQ using the JMS API.
+ */
 @Slf4j
 @WebServlet(urlPatterns = "/")
 public class DemoServlet extends HttpServlet {
