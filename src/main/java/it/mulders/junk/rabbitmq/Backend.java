@@ -3,6 +3,7 @@ package it.mulders.junk.rabbitmq;
 import com.rabbitmq.jms.admin.RMQConnectionFactory;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -26,6 +27,7 @@ import java.nio.charset.Charset;
 @Slf4j
 @WebListener
 public class Backend implements ServletContextListener {
+    private Connection connection;
     private Session session;
     private MessageConsumer consumer;
     private MessageProducer producer;
@@ -39,8 +41,9 @@ public class Backend implements ServletContextListener {
             var connectionFactory = (ConnectionFactory) environment.lookup("jms/ConnectionFactory");
             ((RMQConnectionFactory)connectionFactory).setDeclareReplyToDestination(false);
 
-            var connection = connectionFactory.createConnection();
-            connection.setClientID("consumer");
+            this.connection = connectionFactory.createConnection();
+            this.connection.setClientID("consumer");
+            this.connection.start();
             var metadata = connection.getMetaData();
             log.info("Obtained a JMS {}.{} connection with {}",
                     metadata.getJMSMajorVersion(), metadata.getJMSMinorVersion(), metadata.getJMSProviderName());
@@ -93,6 +96,13 @@ public class Backend implements ServletContextListener {
         if (this.session != null) {
             try {
                 this.session.close();
+            } catch (JMSException e) {
+                log.error("Failed to close JMS session", e);
+            }
+        }
+        if (this.connection != null) {
+            try {
+                this.connection.close();
             } catch (JMSException e) {
                 log.error("Failed to close JMS connection", e);
             }

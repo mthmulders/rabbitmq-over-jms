@@ -2,6 +2,7 @@ package it.mulders.junk.rabbitmq;
 
 import lombok.extern.slf4j.Slf4j;
 
+import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
@@ -27,8 +28,8 @@ import java.util.UUID;
 @Slf4j
 @WebServlet(urlPatterns = "/")
 public class DemoServlet extends HttpServlet {
+    private Connection connection;
     private Session session;
-    private Queue queue;
     private MessageProducer producer;
 
     @Override
@@ -39,18 +40,18 @@ public class DemoServlet extends HttpServlet {
             var environment = (Context) context.lookup("java:comp/env");
 
             var connectionFactory = (ConnectionFactory) environment.lookup("jms/ConnectionFactory");
-            var connection = connectionFactory.createConnection();
-            connection.setClientID("producer");
+            this.connection = connectionFactory.createConnection();
+            this.connection.start();
             var metadata = connection.getMetaData();
             log.info("Obtained a JMS {}.{} connection with {}",
                     metadata.getJMSMajorVersion(), metadata.getJMSMinorVersion(), metadata.getJMSProviderName());
 
             this.session = connection.createSession(true, 4);
 
-            this.queue = (Queue) environment.lookup("jms/ExampleQueue");
-            log.info("Obtained reference to JMS queue with name {}", this.queue.getQueueName());
+            var queue = (Queue) environment.lookup("jms/ExampleQueue");
+            log.info("Obtained reference to JMS queue with name {}", queue.getQueueName());
 
-            this.producer = this.session.createProducer(this.queue);
+            this.producer = this.session.createProducer(queue);
         } catch (JMSException | NamingException e) {
             throw new ServletException("Could not initialize DemoServlet", e);
         }
@@ -72,6 +73,14 @@ public class DemoServlet extends HttpServlet {
             try {
                 this.session.close();
             } catch (JMSException e) {
+                log.error("Failed to close JMS session", e);
+            }
+        }
+
+        if (this.connection != null) {
+            try {
+                this.connection.close();
+            } catch (JMSException e) {
                 log.error("Failed to close JMS connection", e);
             }
         }
@@ -83,7 +92,8 @@ public class DemoServlet extends HttpServlet {
     {
         try {
             var replyQueue = session.createTemporaryQueue();
-            producer.setTimeToLive(60_000); // assuming this is msec from now
+            var replyQueueName = replyQueue.getQueueName();
+            producer.setTimeToLive(60000); // value is in milliseconds
             var message = this.session.createBytesMessage();
 
             message.setJMSDeliveryMode(DeliveryMode.PERSISTENT);
@@ -93,9 +103,10 @@ public class DemoServlet extends HttpServlet {
 
             producer.send(message);
 
+            response.getWriter().write("Well, that seemed to work! Message was sent with reply-to " + replyQueueName);
+
         } catch (JMSException e) {
             throw new ServletException(e);
         }
-        response.getWriter().write("Well, that seemed to work!");
     }
 }
