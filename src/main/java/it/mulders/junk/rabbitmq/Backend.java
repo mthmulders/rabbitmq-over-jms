@@ -39,7 +39,7 @@ public class Backend implements ServletContextListener {
             var environment = (Context) context.lookup("java:comp/env");
 
             var connectionFactory = (ConnectionFactory) environment.lookup("jms/ConnectionFactory");
-            ((RMQConnectionFactory)connectionFactory).setDeclareReplyToDestination(false);
+            ((RMQConnectionFactory) connectionFactory).setDeclareReplyToDestination(false);
 
             this.connection = connectionFactory.createConnection();
             this.connection.setClientID("consumer");
@@ -48,7 +48,7 @@ public class Backend implements ServletContextListener {
             log.info("Obtained a JMS {}.{} connection with {}",
                     metadata.getJMSMajorVersion(), metadata.getJMSMinorVersion(), metadata.getJMSProviderName());
 
-            this.session = connection.createSession(true, 4);
+            this.session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             var queue = (Queue) environment.lookup("jms/ExampleQueue");
 
